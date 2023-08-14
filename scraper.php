@@ -145,9 +145,15 @@ foreach ($urls as $url) {
         $htmltext = processHtmlContent($inner_content_dom);
     }
 
+    // location
+    $bread_crumbs = $dom->find('.site-content .site-main #breadcrumbs')[0];
+    $location_span = $bread_crumbs->find('span span')[2];
+    $location_link = $location_span->find('a')[0];
+    $location = strip_tags($location_link);
+
 
     // Prepare query
-    $stmt = $db->prepare('INSERT INTO main (source_url, type, address, longlat, gmaps_iframe_url, main_image_url, secondary_images, title, slug, wp_id, yt_videos, text_html) VALUES (:source_url, :type, :address, :longlat, :gmaps_iframe_url, :main_image_url, :secondary_images, :title, :slug, :wp_id, :yt_videos, :text_html)');
+    $stmt = $db->prepare('INSERT INTO main (source_url, type, address, longlat, gmaps_iframe_url, main_image_url, secondary_images, title, slug, wp_id, yt_videos, text_html, location) VALUES (:source_url, :type, :address, :longlat, :gmaps_iframe_url, :main_image_url, :secondary_images, :title, :slug, :wp_id, :yt_videos, :text_html, :location)');
 
     // Bind the parameters to the placeholders
     $stmt->bindParam(':source_url', $url, PDO::PARAM_STR);
@@ -162,6 +168,7 @@ foreach ($urls as $url) {
     $stmt->bindParam(':wp_id', $wpId, PDO::PARAM_STR);
     $stmt->bindParam(':yt_videos', $yt_urls, PDO::PARAM_STR);
     $stmt->bindParam(':text_html', $htmltext, PDO::PARAM_STR);
+    $stmt->bindParam(':location', $location, PDO::PARAM_STR);
 
     $stmt->execute();
 
