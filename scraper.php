@@ -33,9 +33,8 @@ if (empty($urls)) {
 $dataAdded = 0;
 
 foreach ($urls as $url) {
+
     $type = 'place';
-    $longlat = null;
-    $wpId = null;
 
     // Check if the URL already exists in the database
     $stmt = $db->prepare('SELECT COUNT(*) FROM main WHERE source_url = :source_url');
@@ -141,8 +140,10 @@ foreach ($urls as $url) {
     // html text
     $inner_content_dom = $dom->find('.entry-content')[0];
     $htmltext = null;
+    $pagetext = null;
     if (!empty($inner_content_dom)) {
         $htmltext = processHtmlContent($inner_content_dom);
+        $pagetext = strip_tags($htmltext);
     }
 
     // location
@@ -153,26 +154,26 @@ foreach ($urls as $url) {
 
 
     // Prepare query
-    $stmt = $db->prepare('INSERT INTO main (source_url, type, address, longlat, gmaps_iframe_url, main_image_url, secondary_images, title, slug, wp_id, yt_videos, text_html, location) VALUES (:source_url, :type, :address, :longlat, :gmaps_iframe_url, :main_image_url, :secondary_images, :title, :slug, :wp_id, :yt_videos, :text_html, :location)');
+    $stmt = $db->prepare('INSERT INTO main (source_url, type, address, gmaps_iframe_url, main_image_url, secondary_images, title, slug, yt_videos, page_text, location) VALUES (:source_url, :type, :address, :gmaps_iframe_url, :main_image_url, :secondary_images, :title, :slug, :yt_videos, :page_text, :location)');
 
     // Bind the parameters to the placeholders
     $stmt->bindParam(':source_url', $url, PDO::PARAM_STR);
     $stmt->bindParam(':type', $type, PDO::PARAM_STR);
     $stmt->bindParam(':address', $address, PDO::PARAM_STR);
-    $stmt->bindParam(':longlat', $longlat, PDO::PARAM_STR);
     $stmt->bindParam(':gmaps_iframe_url', $gmapIframe, PDO::PARAM_STR);
     $stmt->bindParam(':main_image_url', $mainImage, PDO::PARAM_STR);
     $stmt->bindParam(':secondary_images', $secondaryImages, PDO::PARAM_STR);
     $stmt->bindParam(':title', $title, PDO::PARAM_STR);
     $stmt->bindParam(':slug', $slug, PDO::PARAM_STR);
-    $stmt->bindParam(':wp_id', $wpId, PDO::PARAM_STR);
     $stmt->bindParam(':yt_videos', $yt_urls, PDO::PARAM_STR);
-    $stmt->bindParam(':text_html', $htmltext, PDO::PARAM_STR);
+    $stmt->bindParam(':page_text', $pagetext, PDO::PARAM_STR);
     $stmt->bindParam(':location', $location, PDO::PARAM_STR);
 
     $stmt->execute();
 
     $dataAdded++;
+
+    echo 'Added query for url: ' . $url . PHP_EOL;
 }
 
 echo 'Execution finished! ' . $dataAdded . ' new query added into the database.';
