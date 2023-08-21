@@ -26,9 +26,9 @@ function processHtmlContent($domNode)
 
     // Remove all iframes
     $inside_iframes = $entryContent->find('iframe');
-    if ($inside_iframes) {
-        foreach ($inside_iframes as $iframe) {
-            $iframe->delete();
+    if (!empty($inside_iframes)) {
+        foreach ($inside_iframes as $tag) {
+            $tag->delete();
         }
     }
     unset($inside_iframes);
@@ -53,7 +53,7 @@ function processHtmlContent($domNode)
     unset($firstH3);
 
     // Remove the county_div element
-    $county_div = $entryContent->find('div.county');
+    $county_div = $entryContent->find('div.county')[0];
     if ($county_div) {
         $county_div->delete();
     }
@@ -64,6 +64,7 @@ function processHtmlContent($domNode)
     foreach ($uls as $ul) {
         $ul->delete();
     }
+    unset($uls);
 
     // Remove the youtube videos and links H3
     $all_h3 = $entryContent->find('h3');
@@ -72,12 +73,14 @@ function processHtmlContent($domNode)
             $h3->delete();
         }
     }
+    unset($all_h3);
 
     // Remove all span elements with id starting with 'ezoic-'
     $ezoicSpans = $entryContent->find('span[id^="ezoic-"]');
     foreach ($ezoicSpans as $span) {
         $span->delete();
     }
+    unset($ezoicSpans);
 
     // Find all 'a' tags in the HTML content
     $aTags = $entryContent->find('a');
@@ -87,8 +90,8 @@ function processHtmlContent($domNode)
         $textnode = new TextNode($innerhtml);
         $a->getParent()->replaceChild($id, $textnode);
     }
-
+    unset($aTags);
 
     // Return the modified HTML content
-    return $entryContent->innerhtml;
+    return $entryContent;
 }

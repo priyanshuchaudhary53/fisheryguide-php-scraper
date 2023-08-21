@@ -4,6 +4,8 @@ require 'vendor/autoload.php';
 require 'htmlcontentparser.php';
 
 use PHPHtmlParser\Dom;
+use PHPHtmlParser\Dom\TextNode;
+
 
 $url_file_path = 'urls.txt';
 
@@ -54,18 +56,46 @@ foreach ($urls as $url) {
     $dom = new Dom;
     $dom->loadStr($htmlString);
 
-    // address and gmap iframe
-    $addressParagrapgh = $dom->find('.entry-content p')[0];
-    $gmapIframe = $addressParagrapgh->find('iframe')[0];
+    // location
+    $bread_crumbs = $dom->find('.site-content .site-main #breadcrumbs')[0];
+    $location_span = $bread_crumbs->find('span span')[2];
+    $location_link = $location_span->find('a')[0];
+    $location = strip_tags($location_link);
 
-    if ($gmapIframe) {
-        $gmapIframe->delete();
+    // address and gmap iframe
+    $address = null;
+    $gmapIframe = null;
+
+    $firstIframe = $dom->find('.entry-content iframe')[0];
+    $firstIframeSrc = $firstIframe->getAttribute('src');
+    if (strpos($firstIframeSrc, 'google.com/maps') !== false) {
+        $gmapIframe = $firstIframe;
     }
 
-    $address = strip_tags($addressParagrapgh);
+    $addressParagrapgh = $dom->find('.entry-content p')[0];
+    if ($addressParagrapgh) {
 
-    if (!$gmapIframe) {
-        $gmapIframe = null;
+        $addressIframe = $addressParagrapgh->find('iframe')[0];
+
+        if ($addressIframe) {
+            $addressIframe->delete();
+        }
+        unset($addressIframe);
+
+        $aTags = $addressParagrapgh->find('a');
+        foreach ($aTags as $a) {
+            $id = $a->id();
+            $innerhtml = $a->innerHtml;
+            $textnode = new TextNode($innerhtml);
+            $a->getParent()->replaceChild($id, $textnode);
+        }
+        unset($aTags);
+
+        $address = trim(strip_tags($addressParagrapgh));
+
+        if (strlen($address) > 120 || strlen($address) === 0) {
+            $address = null;
+        }
     }
 
     // images
@@ -143,14 +173,27 @@ foreach ($urls as $url) {
     $pagetext = null;
     if (!empty($inner_content_dom)) {
         $htmltext = processHtmlContent($inner_content_dom);
-        $pagetext = strip_tags($htmltext);
+        $pagetext = trim(strip_tags($htmltext->innerHtml));
+
+        if ($address === null) {
+            $textAllH3 = $htmltext->find('h3');
+            foreach ($textAllH3 as $h3) {
+                $h3->delete();
+            }
+            unset($textAllH3);
+
+            $textAllPTags = $htmltext->find('p');
+            foreach ($textAllPTags as $pTag) {
+                $pTag->delete();
+            }
+            unset($textAllPTags);
+
+            $address = trim(strip_tags($htmltext));
+
+            $pagetext = str_replace($address, '', $pagetext);
+        }
     }
 
-    // location
-    $bread_crumbs = $dom->find('.site-content .site-main #breadcrumbs')[0];
-    $location_span = $bread_crumbs->find('span span')[2];
-    $location_link = $location_span->find('a')[0];
-    $location = strip_tags($location_link);
 
 
     // Prepare query
